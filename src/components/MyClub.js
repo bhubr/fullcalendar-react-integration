@@ -3,13 +3,24 @@ import React from 'react'
 import Grid from '@material-ui/core/Grid'
 import CalendarBase from 'material-ui-pickers/DatePicker/Calendar'
 import withUtils from 'material-ui-pickers/_shared/WithUtils'
-// import moment from 'moment'
+import moment from 'moment'
 import MomentUtils from 'material-ui-pickers/utils/moment-utils'
 import { schedulerLicenseKey } from '../schedulerLicenseKey.json'
 import IconButton from '@material-ui/core/IconButton'
 import PlusOne from '@material-ui/icons/PlusOne'
 import NewEventModal from './NewEventModal'
-import FullCalendar from './FullCalendar'
+
+// Une version qui marche, modifiée à partir de:
+// https://github.com/vadym-vorobel/fullcalendar-react
+import { FullCalendar } from '../fullcalendar-react/FullCalendar'
+
+// Une fonction pour calculer le décalage par rapport à GMT (temps universel)
+import { getOffsetHours, getOffsetString } from '../helpers/computeTimeOffset'
+
+// DES VERSIONS QUE J'AI TESTEES ET QUI NE MARCHAIENT PAS
+// import FullCalendar from './FullCalendar'
+// import FullCalendar from 'fullcalendar-reactwrapper'
+
 const Calendar = withUtils()(CalendarBase)
 
 const calendarProps = {
@@ -32,7 +43,16 @@ class MyClub extends React.Component {
   state = {
     date: moment(),
     modalOpen: false,
-    events: [{"resourceId":"a","title":"Conference","start":"2018-06-16","end":"2018-06-18"},{"resourceId":"b","title":"Birthday Party","start":"2018-06-18T07:00:00+00:00"}]
+    events: [
+    {"resourceId":"a","title":"Conference","start":"2018-06-16","end":"2018-06-18"},
+    {"resourceId":"b","title":"Birthday Party","start":"2018-06-18T07:00:00+00:00"},
+    {
+      "allDay": false,
+      "end": "2018-06-18T13:30:04+00:00",
+      "resourceId": "b",
+      "start": "2018-06-18T12:00:04+00:00",
+      "title": "dynamic event 0"
+    }]
   }
 
   handleOpenModal = () => {
@@ -42,6 +62,8 @@ class MyClub extends React.Component {
   handleCloseModal = () => {
     this.setState({ modalOpen: false })
   }
+  // C'est ici qu'on crée un nouvel évènement, une fois que
+  // le formulaire de la modale de NewEventModal a été soumis
   handleSubmitModal = ({ timeStart, timeEnd }) => {
     const { events, date } = this.state
     console.log('handleSubmitModal', timeStart, timeEnd)
@@ -51,24 +73,31 @@ class MyClub extends React.Component {
 
     const start = new Date()
     const [hoursStart, minutesStart] = timeStart.split(':')
-    start.setHours(hoursStart)
-    start.setMinutes(minutesStart)
+    start.setHours(Number(hoursStart) + getOffsetHours())
+    start.setMinutes(Number(minutesStart))
+    const startMoment = moment(start)
 
     const end = new Date()
     const [hoursEnd, minutesEnd] = timeEnd.split(':')
-    end.setHours(hoursEnd)
-    end.setMinutes(minutesEnd)
+    end.setHours(Number(hoursEnd) + getOffsetHours())
+    end.setMinutes(Number(minutesEnd))
+    const endMoment = moment(end)
+
+    const offsetString = getOffsetString()
+
     const newEvent = {
       title: 'dynamic event ' + i++,
       resourceId: 'b',
-      // start: moment(start),
-      start: start.toISOString(),
-      end: end.toISOString(),
-      // end: moment(end),
+      // start: startMoment.format(),
+      // end: endMoment.format(),
+      start: start.toISOString().substr(0, 19) + offsetString,
+      end: end.toISOString().substr(0, 19) + offsetString,
       allDay: false
     }
+    console.log([].concat(events, newEvent))
     this.setState({
-      events: [...events, newEvent]
+      events: [].concat(events, newEvent),
+      modalOpen: false
     })
   }
 
@@ -80,14 +109,17 @@ class MyClub extends React.Component {
   }
   constructor (props) {
     super(props)
+
+    // Options du calendrier
+    // Créer un schedulerLicenseKey.json en s'inspirant de schedulerLicenseKey.sample.json
     this.calendarOptions = {
       schedulerLicenseKey,
       defaultView: 'agendaFourDay',
       groupByResource: true,
       header: {
         left: 'prev,next',
-        center: 'title',
-        // center: 'addEventButton',
+        // center: 'title',
+        center: 'addEventButton',
         right: 'agendaDay,agendaFourDay'
       },
       views: {
@@ -103,6 +135,9 @@ class MyClub extends React.Component {
       events: this.state.events,
 
       customButtons: {
+        // Une façon d'ajouter un évènement en passant directement
+        // par l'API du fullCalendar... a priori pas la bonne façon
+        // car "pas très React"
         addEventButton: {
           text: 'add event...',
           click: () => {
@@ -125,7 +160,9 @@ class MyClub extends React.Component {
     }
   }
   render () {
-    const { date, modalOpen } = this.state
+    const { date, modalOpen, events } = this.state
+    const { calendarOptions } = this
+    const props = {...calendarOptions, events}
     return (
       <Grid container spacing={24}>
         <Grid item xs={12} sm={4} md={3}>
@@ -136,7 +173,7 @@ class MyClub extends React.Component {
           </IconButton>
         </Grid>
         <Grid item xs={12} sm={8} md={9}>
-          <FullCalendar options={this.calendarOptions} events={this.state.events} />
+          <FullCalendar options={{...props}} />
         </Grid>
       </Grid>
     )
