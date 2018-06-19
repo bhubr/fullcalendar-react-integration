@@ -5,6 +5,7 @@
   "dependencies": {
     "@material-ui/core": "^1.2.1",
     "@material-ui/icons": "^1.1.0",
+    "date-fns": "^2.0.0-alpha.10",
     "fullcalendar": "^3.9.0",
     "fullcalendar-reactwrapper": "^1.0.7",
     "fullcalendar-scheduler": "^1.9.4",
@@ -13,6 +14,7 @@
     "prop-types": "^15.6.1",
     "react": "^16.4.1",
     "react-dom": "^16.4.1",
+    "react-google-maps": "^9.4.5",
     "react-router-dom": "^4.3.1",
     "react-scripts": "1.1.4"
   },
@@ -31,5 +33,6 @@
     "eslint-plugin-promise": "^3.8.0",
     "eslint-plugin-react": "^7.9.1",
     "eslint-plugin-standard": "^3.1.0"
-  }
+  },
+  "proxy": "http://localhost:5000"
 }
