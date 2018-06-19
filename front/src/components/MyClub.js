@@ -70,16 +70,20 @@ class MyClub extends React.Component {
       timeStart: '',
       timeEnd: ''
     },
-    events: [
-    ]
+    events: [],
+    resources: []
   }
 
   componentDidMount () {
-    fetch('/api/timeslots?clubId=2')
-    .then(res => res.json())
-    .then(eventifyTimeslots)
-    .then(timeslots => this.setState({
-      events: timeslots
+    Promise.all([
+      fetch('/api/timeslots?clubId=2')
+        .then(res => res.json()),
+      fetch('/api/resources?clubId=2')
+        .then(res => res.json())
+    ])
+    .then(([timeslots, resources]) => [eventifyTimeslots(timeslots), resources])
+    .then(([events, resources]) => this.setState({
+      events, resources
     }))
     // this.setState({
     //   events: [
@@ -201,8 +205,8 @@ class MyClub extends React.Component {
         }
       },
       resources: [
-        { id: 1, title: 'Room A' },
-        { id: 2, title: 'Room B' }
+        // { id: 1, title: 'Room A' },
+        // { id: 2, title: 'Room B' }
       ],
       events: this.state.events,
 
@@ -245,9 +249,9 @@ class MyClub extends React.Component {
     }
   }
   render () {
-    const { date, modalOpen, modalFields, events } = this.state
+    const { date, modalOpen, modalFields, events, resources } = this.state
     const { calendarOptions } = this
-    const props = {...calendarOptions, events}
+    const props = {...calendarOptions, events, resources}
     return (
       <Grid container spacing={24}>
         <Grid item xs={12} sm={4} md={3}>
